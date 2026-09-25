@@ -1,0 +1,29 @@
+{
+  "name": "agriscan-backend",
+  "version": "1.0.0",
+  "description": "AgriScan Main API Backend Server",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "node --watch src/app.js",
+    "test": "node tests/api.test.js"
+  },
+  "keywords": [
+    "agriscan",
+    "pest-detection",
+    "disease-detection",
+    "express",
+    "node"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "axios": "^1.7.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "form-data": "^4.0.0",
+    "multer": "^1.4.5-lts.1"
+  }
+}

@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Builds & Outputs
+build/
+.dart_tool/
+.idea/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.apk
+*.aab
+
+# Environment & Local Configuration
+.env
+*.env
+*.env.local
+
+# OS Generated
+.DS_Store
+Thumbs.db
+
+# Large Model Weights (>100MB)
+ai-service/models/disease/*.pt

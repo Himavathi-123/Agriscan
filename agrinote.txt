@@ -1,0 +1,75 @@
+🦠 Detectable Plant Diseases (38 Conditions across 14 Crops)
+
+Crop Category	Detectable Diseases & Health Conditions
+🍎 Apple	Apple Scab, Black Rot, Cedar Apple Rust, Healthy
+🫐 Blueberry	Healthy
+🍒 Cherry (including sour)	Powdery Mildew, Healthy
+🌽 Corn (Maize)	Cercospora Leaf Spot (Gray Leaf Spot), Common Rust, Northern Leaf Blight, Healthy
+🍇 Grape	Black Rot, Esca (Black Measles), Isariopsis Leaf Spot, Healthy
+🍊 Orange / Citrus	Citrus Greening (Huanglongbing)
+🫑 Peach	Bacterial Spot, Healthy
+🌶️ Pepper (Bell)	Bacterial Spot, Healthy
+🥔 Potato	Early Blight, Late Blight, Healthy
+🍓 Strawberry	Leaf Scorch, Healthy
+🍅 Tomato	Bacterial Spot, Early Blight, Late Blight, Leaf Mold, Septoria Leaf Spot, Spider Mites (Two-Spotted), Target Spot, Yellow Leaf Curl Virus, Mosaic Virus, Healthy
+🫛 Soybean	Healthy
+🎃 Squash	Powdery Mildew
+🍇 Raspberry	Healthy
+
+
+
+🐛 Detectable Crop Pests (102 Agricultural Pests)
+🌾 Grain & Cereal Pests (Rice, Wheat, Corn)
+Rice Pests: Brown Plant Hopper, White Backed Plant Hopper, Small Brown Plant Hopper, Rice Leaf Roller, Rice Leaf Caterpillar, Paddy Stem Maggot, Asiatic Rice Borer, Yellow Rice Borer, Rice Gall Midge, Rice Stemfly, Rice Water Weevil, Rice Leafhopper, Rice Shell Pest.
+Wheat Pests: English Grain Aphid, Green Bug, Bird Cherry-Oat Aphid, Wheat Blossom Midge, Wheat Phloeothrips, Wheat Sawfly, Longlegged Spider Mite.
+Corn Pests: Corn Borer, Armyworm, Aphids.
+🥬 Vegetable & Legume Pests
+Root & Soil Pests: Grub, Mole Cricket, Wireworm, Black Cutworm, Large Cutworm, Yellow Cutworm.
+Leaf & Stem Pests: Flea Beetle, Cabbage Armyworm, Beet Armyworm, Meadow Moth, Beet Weevil, Alfalfa Weevil, Tarnished Plant Bug, Legume Blister Beetle, Thrips, Alfalfa Seed Chalcid.
+🍎 Fruit & Special Crop Pests
+Citrus & Tree Pests: Panonchus Citri McGregor, Phyllocoptes Oleiverus, Icerya Purchasi, Ceroplastes Rubens, Chrysomphalus Aonidum, Toxoptera Citricidus, Phyllocnistis Citrella (Citrus Leafminer), Mango Flat Beak Leafhopper.
+Vine & Berry Pests: Grape Leafhopper (Erythroneura Apicalis), Viteus Vitifoliae, Red Spider Mite, Pseudococcus Comstocki.
+
+
+
+
+
+
+
+
+It Should detect the affected or Healthy, of if the image is not related to bothe the classes, then i should show invalid image
+
+
+
+
+Plantix
+
+i want the following architecture to be in my project, tell me if it is possible, 
+
+[Mobile app] 
+         │  (Compresses photo & sends via HTTPS REST API)
+         ▼
+[API Gateway & Load Balancer]
+         │  (Queues image via Redis/RabbitMQ)
+         ▼
+[AI Inference Cluster (NVIDIA GPUs)] 
+   ├── 1. Quality Control Check (CNN)
+   ├── 2. Crop Detection (CNN)
+   └── 3. Disease Classification (CNN)
+         │  (Cross-references localized GPS/Weather Data)
+         ▼
+[Structured Response (JSON)] ──► [Farmer's Device (Localized Treatment Plan)]
+
+
+
+
+
+
+Detection
+1. Pest
+2. Disease
+3. Rice Pest (Special Model)
+
+
+
+Upload Image -> Select the Pest/Disease -> pest(All / Rice Model) / disease -> Response Healthy/Invalid/Unhealthy(Name of disease/pest) -> AI Guidance

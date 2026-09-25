@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriScan AI Diagnosis Workflow</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background: #f0f4f8; padding: 2rem 0; }
+        .card { background: white; padding: 2rem; border-radius: 14px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); text-align: left; width: 90%; max-width: 550px; margin-bottom: 2rem; }
+        h1 { color: #1B4332; margin-top:0; margin-bottom: 0.5rem; text-align: center; font-size: 1.6rem; }
+        p.subtitle { color: #666; text-align: center; margin-bottom: 1.8rem; font-size: 0.95rem; }
+        
+        .step-label { font-weight: bold; color: #1B4332; margin-top: 1.2rem; margin-bottom: 0.4rem; display: block; font-size: 0.95rem; }
+        
+        .upload-area { border: 2px dashed #40916C; padding: 1.8rem; border-radius: 10px; cursor: pointer; transition: background 0.3s; display: block; text-align: center; margin-bottom: 1.2rem; background: #f9fffb; }
+        .upload-area:hover { background: #edf9f2; }
+        input[type="file"] { display: none; }
+        
+        button.action-btn { background: #1B4332; color: white; border: none; padding: 0.9rem 1.5rem; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; font-size: 1rem; transition: opacity 0.3s; }
+        button.action-btn:hover { opacity: 0.9; }
+        button.action-btn:disabled { background: #ccc; cursor: not-allowed; }
+        
+        #resultCard { margin-top: 1.5rem; padding: 1.2rem; border-radius: 10px; display: none; }
+        .status-found { background: #ffe5e5; color: #b91c1c; border: 2px solid #fecaca; }
+        .status-nodetection { background: #fff3cd; color: #856404; border: 2px solid #ffeeba; }
+        
+        .detection-item { background: white; padding: 0.6rem 0.8rem; border-radius: 6px; margin: 0.4rem 0; border: 1px solid #ddd; color: #333; }
+        .annotated-img { width: 100%; border-radius: 8px; margin-top: 1rem; border: 1px solid #ccc; display: none; }
+
+        .guidance-btn { background: #2D6A4F; color: white; border: none; padding: 0.75rem 1.2rem; margin-top: 1rem; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; display: none; }
+        .loading { display: none; margin: 1rem 0; color: #40916C; font-weight: bold; text-align: center; }
+        pre { white-space: pre-wrap; word-break: break-all; margin-top: 0.5rem; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+    <!-- Main Diagnosis Card -->
+    <div class="card">
+        <h1>🌱 AgriScan AI Diagnosis Workflow</h1>
+        <p class="subtitle">Upload Image ➔ YOLO11s & PlantDoc AI ➔ Detection & Guidance</p>
+        
+        <!-- Step 1: Upload Image -->
+        <span class="step-label">Upload Crop Photo</span>
+        <label for="fileInput" class="upload-area" id="dropZone">
+            <span id="fileName">📁 Click to select photo</span>
+            <input type="file" id="fileInput" accept="image/*">
+        </label>
+
+        <button id="uploadBtn" class="action-btn" disabled>Run AI Diagnosis</button>
+        <div id="loading" class="loading">Running YOLO11s & PlantDoc AI inference...</div>
+
+        <!-- AI Detection Result -->
+        <div id="resultCard">
+            <h3 id="resultTitle" style="margin-top:0;"></h3>
+            <div id="detectionList"></div>
+            <img id="annotatedPreview" class="annotated-img" alt="Annotated Image Preview">
+            <button id="guidanceBtn" class="guidance-btn">🤖 Get Gemini AI Explanation & Guidance</button>
+        </div>
+    </div>
+
+    <!-- Gemini AI Assistant Result -->
+    <div id="explanationCard" class="card" style="display:none;">
+        <h2 style="margin-top:0; color:#1B4332;">🤖 Gemini AI Agricultural Explanation</h2>
+        <div id="explanationLoading" class="loading">Consulting Gemini AI...</div>
+        <div id="explanationContent" style="background:#f4f9f5; padding:1rem; border-radius:8px; border:1px solid #c8e6c9;">
+            <pre id="explanationText"></pre>
+        </div>
+    </div>
+
+    <script>
+        let latestData = null;
+
+        const fileInput = document.getElementById('fileInput');
+        const fileName = document.getElementById('fileName');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const loading = document.getElementById('loading');
+        const resultCard = document.getElementById('resultCard');
+        const resultTitle = document.getElementById('resultTitle');
+        const detectionList = document.getElementById('detectionList');
+        const annotatedPreview = document.getElementById('annotatedPreview');
+        const guidanceBtn = document.getElementById('guidanceBtn');
+        const explanationCard = document.getElementById('explanationCard');
+        const explanationLoading = document.getElementById('explanationLoading');
+        const explanationText = document.getElementById('explanationText');
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                fileName.textContent = e.target.files[0].name;
+                uploadBtn.disabled = false;
+            }
+        });
+
+        uploadBtn.addEventListener('click', async () => {
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            uploadBtn.disabled = true;
+            loading.style.display = 'block';
+            resultCard.style.display = 'none';
+            explanationCard.style.display = 'none';
+            annotatedPreview.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/v1/detect', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const resObj = await response.json();
+                if (!resObj.success) {
+                    throw new Error(resObj.error?.message || 'Detection failed');
+                }
+
+                const data = resObj.data;
+                latestData = data;
+                resultCard.style.display = 'block';
+                detectionList.innerHTML = '';
+
+                if (data.status === 'DETECTION_FOUND') {
+                    resultCard.className = 'status-found';
+                    resultTitle.textContent = `❌ Detection Found (${data.summary.pestCount} Pest, ${data.summary.diseaseCount} Disease)`;
+                    
+                    data.pests.forEach(p => {
+                        const div = document.createElement('div');
+                        div.className = 'detection-item';
+                        div.innerHTML = `<strong>🐛 Pest:</strong> ${p.name} — <strong>${Math.round(p.confidence * 100)}% confidence</strong>`;
+                        detectionList.appendChild(div);
+                    });
+
+                    data.diseases.forEach(d => {
+                        const div = document.createElement('div');
+                        div.className = 'detection-item';
+                        div.innerHTML = `<strong>🦠 Disease:</strong> ${d.name} — <strong>${Math.round(d.confidence * 100)}% confidence</strong>`;
+                        detectionList.appendChild(div);
+                    });
+                } else {
+                    resultCard.className = 'status-nodetection';
+                    resultTitle.textContent = 'ℹ️ No Confident Detection';
+                    detectionList.innerHTML = '<p style="margin:0;">No confident pest or disease was identified. <em>Note: This does NOT guarantee the crop is healthy. Try another clear image with visible symptoms.</em></p>';
+                }
+
+                if (data.annotatedImage) {
+                    annotatedPreview.src = data.annotatedImage;
+                    annotatedPreview.style.display = 'block';
+                }
+
+                guidanceBtn.style.display = 'block';
+            } catch (err) {
+                resultCard.style.display = 'block';
+                resultCard.className = 'status-nodetection';
+                resultTitle.textContent = 'Error';
+                detectionList.textContent = err.message;
+                guidanceBtn.style.display = 'none';
+            } finally {
+                loading.style.display = 'none';
+                uploadBtn.disabled = false;
+            }
+        });
+
+        guidanceBtn.addEventListener('click', async () => {
+            if (!latestData) return;
+
+            explanationCard.style.display = 'block';
+            explanationLoading.style.display = 'block';
+            explanationText.textContent = '';
+            explanationCard.scrollIntoView({ behavior: 'smooth' });
+
+            try {
+                const response = await fetch('/api/v1/explain', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        crop: 'crop',
+                        detections: {
+                            pests: latestData.pests,
+                            diseases: latestData.diseases
+                        }
+                    })
+                });
+
+                const resObj = await response.json();
+                if (resObj.success && resObj.data?.explanation) {
+                    explanationText.textContent = typeof resObj.data.explanation === 'string' 
+                        ? resObj.data.explanation 
+                        : JSON.stringify(resObj.data.explanation, null, 2);
+                } else {
+                    explanationText.textContent = resObj.data?.message || 'Gemini explanation unavailable.';
+                }
+            } catch (err) {
+                explanationText.textContent = 'Failed to fetch Gemini explanation: ' + err.message;
+            } finally {
+                explanationLoading.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
