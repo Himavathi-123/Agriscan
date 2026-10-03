@@ -218,7 +218,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       final request = http.MultipartRequest(
         'POST',
-        Uri.parse('http://127.0.0.1:5000/predict'),
+        Uri.parse('https://agriscan-backend-gman.onrender.com/predict'),
       );
       request.fields['model_id'] = _selectedModelId;
 
