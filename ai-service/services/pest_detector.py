@@ -14,8 +14,6 @@ class PestDetector:
         self.model = None
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.is_loaded = False
-        
-        self.load_model()
 
     def load_model(self):
         try:
@@ -35,8 +33,6 @@ class PestDetector:
             self.model = YOLO(self.model_path)
             self.model.to(self.device)
             self.is_loaded = True
-            import gc
-            gc.collect()
             logger.info("Pest detection model loaded successfully.")
         except Exception as e:
             logger.error(f"Failed to load pest detection model: {e}", exc_info=True)
@@ -44,12 +40,14 @@ class PestDetector:
 
     def predict(self, image_np, confidence_threshold: float = 0.40) -> list:
         if not self.is_loaded or self.model is None:
+            self.load_model()
+
+        if not self.is_loaded or self.model is None:
             logger.warning("Pest model is not loaded. Returning empty detections.")
             return []
 
         try:
-            with torch.inference_mode():
-                results = self.model(image_np, conf=confidence_threshold, verbose=False)
+            results = self.model(image_np, conf=confidence_threshold, verbose=False)
             detections = []
             
             for result in results:

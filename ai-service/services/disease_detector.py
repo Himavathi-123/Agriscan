@@ -52,8 +52,6 @@ class DiseaseDetector:
         self.model = None
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.is_loaded = False
-        
-        self.load_model()
 
     def load_model(self):
         try:
@@ -76,8 +74,6 @@ class DiseaseDetector:
             self.model = YOLO(self.model_path)
             self.model.to(self.device)
             self.is_loaded = True
-            import gc
-            gc.collect()
             logger.info("PlantDoc disease detection model loaded successfully.")
         except Exception as e:
             logger.error(f"Failed to load disease detection model from {self.model_path}: {e}", exc_info=True)
@@ -85,11 +81,13 @@ class DiseaseDetector:
 
     def predict(self, image_np, confidence_threshold: float = 0.40) -> list:
         if not self.is_loaded or self.model is None:
+            self.load_model()
+
+        if not self.is_loaded or self.model is None:
             return []
 
         try:
-            with torch.inference_mode():
-                results = self.model(image_np, conf=confidence_threshold, verbose=False)
+            results = self.model(image_np, conf=confidence_threshold, verbose=False)
             detections = []
             
             for result in results:
