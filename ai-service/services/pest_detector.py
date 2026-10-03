@@ -14,6 +14,8 @@ class PestDetector:
         self.model = None
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.is_loaded = False
+        
+        self.load_model()
 
     def load_model(self):
         try:
@@ -39,9 +41,6 @@ class PestDetector:
             self.is_loaded = False
 
     def predict(self, image_np, confidence_threshold: float = 0.40) -> list:
-        if not self.is_loaded or self.model is None:
-            self.load_model()
-
         if not self.is_loaded or self.model is None:
             logger.warning("Pest model is not loaded. Returning empty detections.")
             return []

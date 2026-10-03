@@ -172,6 +172,31 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool get _hasImage => _webImage != null || _imageFile != null;
 
+  void _clearSelection() {
+    setState(() {
+      _imageFile = null;
+      _webImage = null;
+      _imageName = null;
+      _result = null;
+      _rawResult = null;
+      _errorMessage = null;
+      _loading = false;
+    });
+  }
+
+  Future<void> _refreshScreen() async {
+    _clearSelection();
+    await _loadScanHistory();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("✨ Screen refreshed cleanly."),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
   // ── Pick image ─────────────────────────────────────────────────────────────
   Future<void> _pickImage(ImageSource source) async {
     final picker = ImagePicker();
@@ -218,7 +243,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       final request = http.MultipartRequest(
         'POST',
-        Uri.parse('https://agriscan-backend-gman.onrender.com/predict'),
+        Uri.parse('http://127.0.0.1:5000/predict'),
       );
       request.fields['model_id'] = _selectedModelId;
 
@@ -435,163 +460,121 @@ class _HomeScreenState extends State<HomeScreen> {
     final timeStr = DateFormat('hh:mm a').format(now);
     final dateStr = DateFormat('EEE, MMM dd, yyyy').format(now);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1B4332), Color(0xFF2D6A4F)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF1B4332).withOpacity(0.25),
-            blurRadius: 12,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Time & Date Column
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.access_time_filled_rounded,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        timeStr,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        dateStr,
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.85),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 390;
 
-              // Temperature & Weather Pill
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.18),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withOpacity(0.25)),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(
-                      Icons.wb_sunny_rounded,
-                      color: Color(0xFFFFB703),
-                      size: 22,
-                    ),
-                    SizedBox(width: 8),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "28°C",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          "Clear Skies",
-                          style: TextStyle(color: Colors.white70, fontSize: 10),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+        final timeAndDate = Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                shape: BoxShape.circle,
               ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          const Divider(color: Colors.white24, height: 1),
-          const SizedBox(height: 10),
-          // Additional Weather Metrics Row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
+              child: const Icon(Icons.access_time_filled_rounded,
+                  color: Colors.white, size: 20),
+            ),
+            const SizedBox(width: 10),
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.water_drop_rounded,
-                    color: Colors.blue[200],
-                    size: 14,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    "Humidity 65%",
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
-                      fontSize: 11,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Icon(Icons.air_rounded, color: Colors.teal[200], size: 14),
-                  const SizedBox(width: 4),
-                  Text(
-                    "Wind 10 km/h",
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
-                      fontSize: 11,
-                    ),
-                  ),
+                  Text(timeStr, style: const TextStyle(
+                    color: Colors.white, fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  )),
+                  Text(dateStr, maxLines: 2, overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: Colors.white.withOpacity(0.85),
+                      fontSize: 11, fontWeight: FontWeight.w500)),
                 ],
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF8CC63F),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Text(
-                  "Optimal Field Spray",
-                  style: TextStyle(
-                    color: Color(0xFF1B4332),
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+            ),
+          ],
+        );
+
+        final temperature = Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.18),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withOpacity(0.25)),
+          ),
+          child: const Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(Icons.wb_sunny_rounded, color: Color(0xFFFFB703), size: 22),
+            SizedBox(width: 8),
+            Column(crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min, children: [
+              Text('28°C', style: TextStyle(color: Colors.white,
+                fontSize: 16, fontWeight: FontWeight.bold)),
+              Text('Clear Skies', style: TextStyle(
+                color: Colors.white70, fontSize: 10)),
+            ]),
+          ]),
+        );
+
+        final metrics = Wrap(
+          spacing: 12,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(Icons.water_drop_rounded, color: Colors.blue[200], size: 14),
+              const SizedBox(width: 4),
+              Text('Humidity 65%', style: TextStyle(
+                color: Colors.white.withOpacity(0.9), fontSize: 11)),
+            ]),
+            Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(Icons.air_rounded, color: Colors.teal[200], size: 14),
+              const SizedBox(width: 4),
+              Text('Wind 10 km/h', style: TextStyle(
+                color: Colors.white.withOpacity(0.9), fontSize: 11)),
+            ]),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(color: kParrotGreen,
+                borderRadius: BorderRadius.circular(10)),
+              child: const Text('Optimal Field Spray',
+                style: TextStyle(color: kGreen900, fontSize: 10,
+                  fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF1B4332), Color(0xFF2D6A4F)],
+              begin: Alignment.topLeft, end: Alignment.bottomRight),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [BoxShadow(
+              color: const Color(0xFF1B4332).withOpacity(0.25),
+              blurRadius: 12, offset: const Offset(0, 5))],
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (compact) ...[
+                Row(children: [Expanded(child: timeAndDate)]),
+                const SizedBox(height: 12),
+                Align(alignment: Alignment.centerLeft, child: temperature),
+              ] else
+                Row(children: [
+                  Expanded(child: timeAndDate),
+                  const SizedBox(width: 10),
+                  temperature,
+                ]),
+              const SizedBox(height: 12),
+              const Divider(color: Colors.white24, height: 1),
+              const SizedBox(height: 10),
+              metrics,
             ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -938,13 +921,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ── App bar ────────────────────────────────────────────────────────────────
   PreferredSizeWidget _buildAppBar() {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final compact = screenWidth < 390;
+    final veryCompact = screenWidth < 350;
+
     return AppBar(
       flexibleSpace: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [Color(0xFF1B4332), Color(0xFF2D6A4F)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topLeft, end: Alignment.bottomRight,
           ),
         ),
       ),
@@ -954,89 +940,72 @@ class _HomeScreenState extends State<HomeScreen> {
       centerTitle: false,
       automaticallyImplyLeading: false,
       toolbarHeight: 80,
-      title: Row(
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.18),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
-            ),
-            child: const Icon(Icons.eco_rounded, color: kParrotGreen, size: 24),
+      titleSpacing: 12,
+      title: Row(children: [
+        Container(
+          width: 38, height: 38,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.18),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
           ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                context.l10n('app_title'),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 19,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              Text(
-                context.l10n('app_subtitle'),
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.85),
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-      actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 8.0, top: 22.0, bottom: 22.0),
-          child: ElevatedButton.icon(
-            onPressed: () => _showAIAssistantDialog(context),
-            icon: const Icon(
-              Icons.psychology_rounded,
-              size: 16,
-              color: Color(0xFF1B4332),
-            ),
-            label: const Text(
-              'Ask AI',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-                color: Color(0xFF1B4332),
-              ),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-            ),
-          ),
+          child: const Icon(Icons.eco_rounded, color: kParrotGreen, size: 24),
         ),
+        const SizedBox(width: 9),
+        Expanded(child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(context.l10n('app_title'), maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: Colors.white,
+                fontSize: compact ? 16 : 19,
+                fontWeight: FontWeight.bold, letterSpacing: 0.3)),
+            if (!veryCompact)
+              Text(context.l10n('app_subtitle'), maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.85),
+                  fontSize: 10, fontWeight: FontWeight.w500)),
+          ],
+        )),
+      ]),
+      actions: [
+        if (compact)
+          IconButton(
+            onPressed: () => _showAIAssistantDialog(context),
+            tooltip: 'Ask AI',
+            icon: const Icon(Icons.psychology_rounded,
+              color: Colors.white, size: 25),
+          )
+        else
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 4),
+            child: ElevatedButton.icon(
+              onPressed: () => _showAIAssistantDialog(context),
+              icon: const Icon(Icons.psychology_rounded, size: 16,
+                color: kGreen900),
+              label: const Text('Ask AI', style: TextStyle(
+                fontWeight: FontWeight.bold, fontSize: 13,
+                color: kGreen900)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white, elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
+                padding: const EdgeInsets.symmetric(horizontal: 12)),
+            ),
+          ),
         IconButton(
           onPressed: () {
             _requireAuth(context, 'Farmer Profile & Settings', () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ProfileScreen()),
-              );
+              Navigator.push(context, MaterialPageRoute(
+                builder: (context) => const ProfileScreen()));
             });
           },
-          icon: const Icon(
-            Icons.account_circle_rounded,
-            color: Colors.white,
-            size: 30,
-          ),
+          icon: const Icon(Icons.account_circle_rounded,
+            color: Colors.white, size: 30),
           tooltip: context.l10n('farmer_profile'),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 4),
       ],
     );
   }
@@ -1323,6 +1292,26 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
+        // Clear selection button top-right
+        Positioned(
+          top: 12,
+          right: 12,
+          child: GestureDetector(
+            onTap: _clearSelection,
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.6),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.close_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+          ),
+        ),
         // Filename badge
         if (_imageName != null)
           Positioned(
@@ -1384,28 +1373,25 @@ class _HomeScreenState extends State<HomeScreen> {
             loading: _loading,
           ),
         ),
-        if (_result != null) ...[
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: () {
-              // TODO: Logic for detect button after capture
-              // This is usually what _detect does, but user requested a "detect" button specifically after capture.
-              // Actually, _detect IS the detect button.
-              // The user said: "After capturing, it should show detect button"
-              // So I will make sure _FilledBtn (Start Analysis) is only visible then.
-            },
-            icon: const Icon(Icons.search),
-            label: const Text('Detect More'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: kParrotGreen,
-              foregroundColor: Colors.white,
-              minimumSize: const Size(double.infinity, 50),
+        const SizedBox(height: 10),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: !_loading ? _refreshScreen : null,
+            icon: const Icon(Icons.refresh_rounded, color: kRed),
+            label: const Text(
+              "Clear Screen & Reset",
+              style: TextStyle(color: kRed, fontWeight: FontWeight.bold),
+            ),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: kRed, width: 1.5),
+              padding: const EdgeInsets.symmetric(vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
               ),
             ),
           ),
-        ],
+        ),
       ],
     );
   }
@@ -1741,12 +1727,15 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Icon(icon, size: 12, color: kTextSecondary.withOpacity(0.7)),
           const SizedBox(width: 6),
-          Text(
-            '$label: ',
-            style: const TextStyle(
-              fontSize: 11,
-              color: kTextSecondary,
-              fontWeight: FontWeight.bold,
+          Flexible(
+            flex: 0,
+            child: Text(
+              '$label: ',
+              style: const TextStyle(
+                fontSize: 11,
+                color: kTextSecondary,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           Expanded(

@@ -3,8 +3,8 @@ import 'package:http/http.dart' as http;
 
 class GeminiService {
   static const String baseUrl =
-      'https://agriscan-backend-gman.onrender.com';
-  static const String localFallbackUrl = 'https://agriscan-backend-gman.onrender.com';
+      'http://10.0.2.2:5000'; // Standard Android emulator localhost fallback
+  static const String localFallbackUrl = 'http://127.0.0.1:5000';
 
   Future<Map<String, dynamic>> sendChatMessage({
     required String prompt,
