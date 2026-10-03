@@ -1,7 +1,15 @@
 import os
+import gc
 import logging
 from typing import Optional
 from dotenv import load_dotenv
+
+# Optimize PyTorch RAM footprint for low-memory cloud hosts (512MB limit)
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+import torch
+torch.set_num_threads(1)
+torch.set_grad_enabled(False)
 
 # Load environment variables
 load_dotenv()

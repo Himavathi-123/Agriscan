@@ -35,6 +35,8 @@ class PestDetector:
             self.model = YOLO(self.model_path)
             self.model.to(self.device)
             self.is_loaded = True
+            import gc
+            gc.collect()
             logger.info("Pest detection model loaded successfully.")
         except Exception as e:
             logger.error(f"Failed to load pest detection model: {e}", exc_info=True)
@@ -46,7 +48,8 @@ class PestDetector:
             return []
 
         try:
-            results = self.model(image_np, conf=confidence_threshold, verbose=False)
+            with torch.inference_mode():
+                results = self.model(image_np, conf=confidence_threshold, verbose=False)
             detections = []
             
             for result in results:

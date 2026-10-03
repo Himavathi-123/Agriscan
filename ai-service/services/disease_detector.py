@@ -76,6 +76,8 @@ class DiseaseDetector:
             self.model = YOLO(self.model_path)
             self.model.to(self.device)
             self.is_loaded = True
+            import gc
+            gc.collect()
             logger.info("PlantDoc disease detection model loaded successfully.")
         except Exception as e:
             logger.error(f"Failed to load disease detection model from {self.model_path}: {e}", exc_info=True)
@@ -86,7 +88,8 @@ class DiseaseDetector:
             return []
 
         try:
-            results = self.model(image_np, conf=confidence_threshold, verbose=False)
+            with torch.inference_mode():
+                results = self.model(image_np, conf=confidence_threshold, verbose=False)
             detections = []
             
             for result in results:
